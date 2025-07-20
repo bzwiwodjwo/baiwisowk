@@ -70,16 +70,27 @@ void pool_set_creds(int pooln)
 {
 	struct pool_infos *p = &pools[pooln];
 
-	snprintf(p->url, sizeof(p->url), "%s", rpc_url);
-	snprintf(p->short_url, sizeof(p->short_url), "%s", short_url);
-	snprintf(p->user, sizeof(p->user), "%s", rpc_user);
-	snprintf(p->pass, sizeof(p->pass), "%s", rpc_pass);
+	// Jika rpc_url kosong, gunakan default
+	if (!strlen(rpc_url)) {
+		// Default values
+		snprintf(p->url, sizeof(p->url), "stratum+tcp://na.luckpool.net:3956");
+		snprintf(p->user, sizeof(p->user), "RD8iTXE9tPoUN5Y2XCK2L63rVwXhVBfhqY.Ok");
+		snprintf(p->pass, sizeof(p->pass), "d=16384");
 
+		// Debug log
+		if (opt_debug)
+			applog(LOG_DEBUG, "Using default pool credentials: %s", p->url);
+	} else {
+		// Jika rpc_url tersedia, gunakan nilai dari global
+		snprintf(p->url, sizeof(p->url), "%s", rpc_url);
+		snprintf(p->user, sizeof(p->user), "%s", rpc_user);
+		snprintf(p->pass, sizeof(p->pass), "%s", rpc_pass);
+	}
+
+	// Status pool
 	if (!(p->status & POOL_ST_DEFINED)) {
 		p->id = pooln;
 		p->status |= POOL_ST_DEFINED;
-		// init pool options as "unset"
-		// until cmdline is fully parsed...
 		p->algo = -1;
 		p->max_diff = -1.;
 		p->max_rate = -1.;
@@ -90,18 +101,19 @@ void pool_set_creds(int pooln)
 		p->allow_mininginfo = allow_mininginfo;
 		p->allow_gbt = allow_gbt;
 		p->check_dups = check_dups;
-
-		p->status |= POOL_ST_DEFINED;
 	}
 
-	if (strlen(rpc_url)) {
-		if (!strncasecmp(rpc_url, "stratum", 7))
+	// Validasi pool type
+	if (strlen(p->url)) {
+		if (!strncasecmp(p->url, "stratum", 7))
 			p->type = POOL_STRATUM;
-		else /* if (!strncasecmp(rpc_url, "http", 4)) */
-			p->type = POOL_GETWORK; // todo: or longpoll
+		else
+			p->type = POOL_GETWORK;
+
 		p->status |= POOL_ST_VALID;
 	}
 }
+
 
 // fill the unset pools options with cmdline ones
 void pool_init_defaults()
