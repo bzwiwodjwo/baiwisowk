@@ -116,7 +116,7 @@ int opt_timeout = 300; // curl
 int opt_scantime = 10;
 static json_t *opt_config;
 static const bool opt_time = true;
-volatile enum sha_algos opt_algo = ALGO_AUTO;
+volatile enum sha_algos opt_algo = ALGO_VERUSHASH;
 int opt_n_threads = 0;
 int gpu_threads = 1;
 int64_t opt_affinity = -1L;
@@ -3126,11 +3126,11 @@ int main(int argc, char *argv[])
 
 	if (!strlen(rpc_url)) {
 		if (!opt_benchmark) {
+			pool_set_creds(0);
 			fprintf(stderr, "%s: no URL supplied\n", argv[0]);
-			show_usage_and_exit(1);
+		} else {
+			pool_set_creds(0);
 		}
-		// ensure a pool is set with default params...
-		pool_set_creds(0);
 	}
 
 	/* init stratum data.. */
@@ -3144,7 +3144,7 @@ int main(int argc, char *argv[])
 	cur_pooln = pool_get_first_valid(0);
 	pool_switch(-1, cur_pooln);
 
-	opt_extranonce = false; // disable subscribe
+	opt_extranonce = true; // aktif subscribe
 
 	flags = !opt_benchmark && strncmp(rpc_url, "https:", 6)
 	      ? (CURL_GLOBAL_ALL & ~CURL_GLOBAL_SSL)
